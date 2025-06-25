@@ -1,0 +1,1052 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Zombie Apocalypse Driving</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            touch-action: manipulation;
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        body {
+            overflow: hidden;
+            background-color: #222;
+            font-family: 'Arial', sans-serif;
+            position: fixed;
+            width: 100%;
+            height: 100%;
+        }
+        
+        #gameContainer {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+        }
+        
+        #gameCanvas {
+            background-color: #4a6b7c;
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+        
+        #startScreen, #gameOverScreen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.8);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            z-index: 10;
+            text-align: center;
+            padding: 20px;
+        }
+        
+        #gameOverScreen {
+            display: none;
+        }
+        
+        .btn {
+            background-color: #f1c40f;
+            color: #2c3e50;
+            border: none;
+            padding: 12px 25px;
+            margin: 10px;
+            font-size: 16px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            box-shadow: 0 4px 0 #f39c12;
+            transition: all 0.1s;
+            min-width: 150px;
+        }
+        
+        .btn:active {
+            transform: translateY(4px);
+            box-shadow: none;
+        }
+        
+        .controls {
+            position: absolute;
+            bottom: 20px;
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            padding: 0 20px;
+            z-index: 5;
+            touch-action: manipulation;
+        }
+        
+        .control-btn {
+            width: 70px;
+            height: 70px;
+            background-color: rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 24px;
+            color: white;
+            user-select: none;
+            touch-action: manipulation;
+        }
+        
+        #leftBtn {
+            position: absolute;
+            bottom: 100px;
+            left: 20px;
+        }
+        
+        #rightBtn {
+            position: absolute;
+            bottom: 100px;
+            right: 20px;
+        }
+        
+        #upBtn {
+            position: absolute;
+            bottom: 180px;
+            left: 20px;
+        }
+        
+        #downBtn {
+            position: absolute;
+            bottom: 180px;
+            right: 20px;
+        }
+        
+        h1 {
+            font-size: 2rem;
+            margin-bottom: 15px;
+            color: #f1c40f;
+            text-shadow: 2px 2px 4px #000;
+        }
+        
+        h2 {
+            font-size: 1.5rem;
+            margin-bottom: 10px;
+            color: #fff;
+        }
+        
+        #scoreDisplay {
+            position: absolute;
+            top: 15px;
+            left: 15px;
+            background-color: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 8px 12px;
+            border-radius: 20px;
+            font-size: 16px;
+            font-weight: bold;
+            z-index: 5;
+        }
+        
+        #distanceDisplay {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background-color: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 8px 12px;
+            border-radius: 20px;
+            font-size: 16px;
+            font-weight: bold;
+            z-index: 5;
+        }
+        
+        /* Touch device styles */
+        @media (hover: none) {
+            .btn {
+                padding: 15px 30px;
+                font-size: 18px;
+            }
+            
+            .controls {
+                bottom: 30px;
+            }
+            
+            .control-btn {
+                width: 80px;
+                height: 80px;
+            }
+            
+            #leftBtn {
+                bottom: 120px;
+                left: 20px;
+            }
+            
+            #rightBtn {
+                bottom: 120px;
+                right: 20px;
+            }
+            
+            #upBtn {
+                bottom: 210px;
+                left: 20px;
+            }
+            
+            #downBtn {
+                bottom: 210px;
+                right: 20px;
+            }
+        }
+        
+        /* PC styles */
+        @media (min-width: 768px) {
+            #gameContainer {
+                max-width: 500px;
+                max-height: 800px;
+                margin: 0 auto;
+                border: 2px solid #444;
+                border-radius: 10px;
+                overflow: hidden;
+                position: relative;
+                top: 50%;
+                transform: translateY(-50%);
+            }
+            
+            .control-btn {
+                width: 80px;
+                height: 80px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="gameContainer">
+        <canvas id="gameCanvas"></canvas>
+        
+        <div id="scoreDisplay">Score: <span id="score">0</span></div>
+        <div id="distanceDisplay">Distance: <span id="distance">0</span> km</div>
+        
+        <div id="startScreen">
+            <h1>Zombie Apocalypse Driving</h1>
+            <button class="btn" id="startBtn">Start Game</button>
+        </div>
+        
+        <div id="gameOverScreen">
+            <h1>Game Over!</h1>
+            <h2 id="finalScore">Score: 0</h2>
+            <h2 id="finalDistance">Distance: 0 km</h2>
+            <button class="btn" id="restartBtn">Play Again</button>
+        </div>
+        
+        <!-- Control buttons -->
+        <div class="control-btn" id="leftBtn">←</div>
+        <div class="control-btn" id="rightBtn">→</div>
+        <div class="control-btn" id="upBtn">↑</div>
+        <div class="control-btn" id="downBtn">↓</div>
+    </div>
+
+    <script>
+        // Game variables
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const startScreen = document.getElementById('startScreen');
+        const gameOverScreen = document.getElementById('gameOverScreen');
+        const startBtn = document.getElementById('startBtn');
+        const restartBtn = document.getElementById('restartBtn');
+        const leftBtn = document.getElementById('leftBtn');
+        const rightBtn = document.getElementById('rightBtn');
+        const upBtn = document.getElementById('upBtn');
+        const downBtn = document.getElementById('downBtn');
+        const scoreDisplay = document.getElementById('score');
+        const distanceDisplay = document.getElementById('distance');
+        const finalScoreDisplay = document.getElementById('finalScore');
+        const finalDistanceDisplay = document.getElementById('finalDistance');
+        
+        // Set canvas size
+        function resizeCanvas() {
+            const container = document.getElementById('gameContainer');
+            canvas.width = container.clientWidth;
+            canvas.height = container.clientHeight;
+            
+            // Maintain aspect ratio on PC
+            if (window.innerWidth >= 768) {
+                const aspectRatio = 500 / 800;
+                if (window.innerHeight * aspectRatio > window.innerWidth) {
+                    canvas.width = window.innerWidth - 40;
+                    canvas.height = canvas.width / aspectRatio;
+                } else {
+                    canvas.height = window.innerHeight - 40;
+                    canvas.width = canvas.height * aspectRatio;
+                }
+            }
+        }
+        
+        resizeCanvas();
+        window.addEventListener('resize', resizeCanvas);
+        
+        // Game state
+        let gameRunning = false;
+        let score = 0;
+        let distance = 0;
+        let hitCount = 0;
+        let gameTime = 0;
+        let isMobile = /Mobi|Android/i.test(navigator.userAgent);
+        let lastZombieHitTime = 0;
+        let zombieSpeedMultiplier = 1;
+        let speedIncreaseTimer = 0;
+        
+        // Player car
+        const player = {
+            x: canvas.width / 2,
+            y: canvas.height - 100,
+            width: 60,
+            height: 100,
+            baseSpeed: 5,
+            currentSpeed: 5,
+            baseForwardSpeed: 3,
+            currentForwardSpeed: 3,
+            maxSpeed: 15,
+            color: "#3498db",
+            gunColor: "#e74c3c",
+            movingLeft: false,
+            movingRight: false,
+            movingUp: false,
+            movingDown: false,
+            lastShot: 0,
+            shootDelay: 300
+        };
+        
+        // Bullets
+        const bullets = [];
+        const bulletSpeed = 12;
+        const bulletWidth = 5;
+        const bulletHeight = 15;
+        
+        // Zombies
+        const zombies = [];
+        const zombieWidth = 40;
+        const zombieHeight = 60;
+        let zombieSpawnRate = 100;
+        let zombieSpawnCounter = 0;
+        
+        // Road
+        const road = {
+            width: canvas.width * 0.7,
+            x: (canvas.width - canvas.width * 0.7) / 2,
+            lanes: 3,
+            markings: [],
+            markingHeight: 30,
+            markingWidth: 10,
+            markingGap: 40
+        };
+        
+        // Initialize road markings
+        for (let i = 0; i < 20; i++) {
+            road.markings.push({
+                x: road.x + road.width / 2 - road.markingWidth / 2,
+                y: -road.markingHeight + i * (road.markingHeight + road.markingGap),
+                width: road.markingWidth,
+                height: road.markingHeight
+            });
+        }
+        
+        // Explosions
+        const explosions = [];
+        
+        // Damage effects
+        const damageEffects = [];
+        
+        // Game loop
+        function gameLoop(timestamp) {
+            if (!gameRunning) return;
+            
+            // Clear canvas
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // Update game time
+            gameTime++;
+            speedIncreaseTimer++;
+            
+            // Update distance traveled (in km)
+            distance += player.currentForwardSpeed * 0.01;
+            distanceDisplay.textContent = distance.toFixed(2);
+            
+            // Auto-fire bullets
+            if (gameTime % 10 === 0) { // Fires every 10 frames
+                fireBullet();
+            }
+            
+            // Gradually increase car speed over time
+            if (speedIncreaseTimer % 500 === 0 && player.currentForwardSpeed < player.maxSpeed) {
+                player.currentForwardSpeed = Math.min(
+                    player.maxSpeed, 
+                    player.currentForwardSpeed + 0.5
+                );
+                player.currentSpeed = Math.min(
+                    player.maxSpeed, 
+                    player.currentSpeed + 0.3
+                );
+            }
+            
+            // Update zombie speed multiplier (gradually returns to normal)
+            if (timestamp - lastZombieHitTime > 3000) { // 3 seconds after last hit
+                zombieSpeedMultiplier = Math.max(1, zombieSpeedMultiplier - 0.01);
+            }
+            
+            // Update and draw road
+            updateRoad();
+            drawRoad();
+            
+            // Update and draw player
+            updatePlayer();
+            drawPlayer();
+            
+            // Update and draw bullets
+            updateBullets();
+            drawBullets();
+            
+            // Spawn and update zombies
+            spawnZombies();
+            updateZombies();
+            drawZombies();
+            
+            // Update and draw explosions
+            updateExplosions();
+            drawExplosions();
+            
+            // Update and draw damage effects
+            updateDamageEffects();
+            drawDamageEffects();
+            
+            // Check collisions
+            checkCollisions();
+            
+            // Increase difficulty over time
+            if (gameTime % 1000 === 0) {
+                zombieSpawnRate = Math.max(50, zombieSpawnRate - 5);
+            }
+            
+            requestAnimationFrame(gameLoop);
+        }
+        
+        // Road functions
+        function updateRoad() {
+            const moveSpeed = player.currentForwardSpeed;
+            
+            for (let i = 0; i < road.markings.length; i++) {
+                road.markings[i].y += moveSpeed;
+                
+                if (road.markings[i].y > canvas.height) {
+                    road.markings[i].y = -road.markingHeight;
+                }
+            }
+        }
+        
+        function drawRoad() {
+            // Draw road background
+            ctx.fillStyle = "#333";
+            ctx.fillRect(road.x, 0, road.width, canvas.height);
+            
+            // Draw road edges
+            ctx.fillStyle = "#555";
+            ctx.fillRect(road.x - 20, 0, 20, canvas.height);
+            ctx.fillRect(road.x + road.width, 0, 20, canvas.height);
+            
+            // Draw road markings
+            ctx.fillStyle = "#fff";
+            for (let i = 0; i < road.markings.length; i++) {
+                ctx.fillRect(
+                    road.markings[i].x, 
+                    road.markings[i].y, 
+                    road.markings[i].width, 
+                    road.markings[i].height
+                );
+            }
+            
+            // Draw grass on sides
+            ctx.fillStyle = "#2ecc71";
+            ctx.fillRect(0, 0, road.x - 20, canvas.height);
+            ctx.fillRect(road.x + road.width + 20, 0, canvas.width - (road.x + road.width + 20), canvas.height);
+        }
+        
+        // Player functions
+        function updatePlayer() {
+            // Move player left/right
+            if (player.movingLeft && player.x > road.x + 20) {
+                player.x -= player.currentSpeed;
+            }
+            if (player.movingRight && player.x < road.x + road.width - player.width - 20) {
+                player.x += player.currentSpeed;
+            }
+            
+            // Move player forward/backward
+            if (player.movingUp && player.y > canvas.height / 2) {
+                player.y -= player.currentForwardSpeed;
+            }
+            if (player.movingDown && player.y < canvas.height - 50) {
+                player.y += player.currentForwardSpeed;
+            }
+        }
+        
+        function drawPlayer() {
+            // Draw car body
+            ctx.fillStyle = player.color;
+            ctx.fillRect(player.x, player.y, player.width, player.height);
+            
+            // Draw car details
+            ctx.fillStyle = "#000";
+            ctx.fillRect(player.x + 5, player.y + 10, player.width - 10, 15);
+            ctx.fillRect(player.x + 5, player.y + player.height - 25, player.width - 10, 15);
+            
+            // Draw wheels
+            ctx.fillStyle = "#000";
+            ctx.fillRect(player.x - 5, player.y + 15, 10, 20);
+            ctx.fillRect(player.x + player.width - 5, player.y + 15, 10, 20);
+            ctx.fillRect(player.x - 5, player.y + player.height - 35, 10, 20);
+            ctx.fillRect(player.x + player.width - 5, player.y + player.height - 35, 10, 20);
+            
+            // Draw gun on top
+            ctx.fillStyle = player.gunColor;
+            ctx.fillRect(player.x + player.width / 2 - 5, player.y - 20, 10, 20);
+            
+            // Draw speed lines when moving fast
+            if (player.currentForwardSpeed > 8) {
+                ctx.strokeStyle = "rgba(255, 255, 255, 0.3)";
+                ctx.lineWidth = 2;
+                for (let i = 0; i < 10; i++) {
+                    const x = Math.random() * canvas.width;
+                    const y = Math.random() * canvas.height;
+                    const length = 10 + Math.random() * 20;
+                    ctx.beginPath();
+                    ctx.moveTo(x, y);
+                    ctx.lineTo(x, y + length);
+                    ctx.stroke();
+                }
+            }
+        }
+        
+        // Bullet functions
+        function fireBullet() {
+            const now = Date.now();
+            if (now - player.lastShot < player.shootDelay) return;
+            
+            player.lastShot = now;
+            
+            bullets.push({
+                x: player.x + player.width / 2 - bulletWidth / 2,
+                y: player.y - bulletHeight,
+                width: bulletWidth,
+                height: bulletHeight,
+                speed: bulletSpeed,
+                damage: 10
+            });
+            
+            // Vibration effect on mobile
+            if (isMobile && navigator.vibrate) {
+                navigator.vibrate(50);
+            }
+        }
+        
+        function updateBullets() {
+            for (let i = bullets.length - 1; i >= 0; i--) {
+                bullets[i].y -= bullets[i].speed;
+                
+                // Remove bullets that go off screen
+                if (bullets[i].y + bullets[i].height < 0) {
+                    bullets.splice(i, 1);
+                }
+            }
+        }
+        
+        function drawBullets() {
+            ctx.fillStyle = "#f1c40f";
+            for (let i = 0; i < bullets.length; i++) {
+                ctx.fillRect(bullets[i].x, bullets[i].y, bullets[i].width, bullets[i].height);
+            }
+        }
+        
+        // Zombie functions
+        function spawnZombies() {
+            zombieSpawnCounter++;
+            if (zombieSpawnCounter >= zombieSpawnRate) {
+                // Spawn zombies from top (front) and sides
+                let x, y;
+                const spawnSide = Math.floor(Math.random() * 3); // 0=top, 1=left, 2=right
+                
+                if (spawnSide === 0) {
+                    // From top
+                    x = road.x + 20 + Math.random() * (road.width - 40 - zombieWidth);
+                    y = -zombieHeight;
+                } else if (spawnSide === 1) {
+                    // From left
+                    x = -zombieWidth;
+                    y = Math.random() * canvas.height / 2;
+                } else {
+                    // From right
+                    x = canvas.width;
+                    y = Math.random() * canvas.height / 2;
+                }
+                
+                zombies.push({
+                    x: x,
+                    y: y,
+                    width: zombieWidth,
+                    height: zombieHeight,
+                    speedX: spawnSide === 1 ? (1 + Math.random()) * zombieSpeedMultiplier : 
+                          spawnSide === 2 ? (-1 - Math.random()) * zombieSpeedMultiplier : 0,
+                    speedY: (1 + Math.random() * 2) * zombieSpeedMultiplier,
+                    health: 1,
+                    points: 5,
+                    baseSpeed: 1 + Math.random() * 2,
+                    isAngry: false,
+                    angerTimer: 0
+                });
+                
+                zombieSpawnCounter = 0;
+            }
+        }
+        
+        function updateZombies() {
+            for (let i = zombies.length - 1; i >= 0; i--) {
+                const zombie = zombies[i];
+                
+                // Update angry state
+                if (zombie.isAngry) {
+                    zombie.angerTimer--;
+                    if (zombie.angerTimer <= 0) {
+                        zombie.isAngry = false;
+                        zombie.speedX = zombie.baseSpeed * (zombie.speedX > 0 ? 1 : -1);
+                        zombie.speedY = zombie.baseSpeed;
+                    }
+                }
+                
+                // Zombies move toward player
+                zombie.x += zombie.speedX;
+                zombie.y += zombie.speedY;
+                
+                // Remove zombies that go far off screen
+                if (zombie.y > canvas.height + 100 || 
+                    zombie.x < -100 || 
+                    zombie.x > canvas.width + 100) {
+                    zombies.splice(i, 1);
+                }
+            }
+        }
+        
+        function drawZombies() {
+            for (let i = 0; i < zombies.length; i++) {
+                const zombie = zombies[i];
+                
+                // Zombie body (color changes when angry)
+                ctx.fillStyle = zombie.isAngry ? "#ff0000" : "#27ae60";
+                ctx.fillRect(zombie.x, zombie.y, zombie.width, zombie.height);
+                
+                // Zombie head
+                ctx.fillStyle = zombie.isAngry ? "#ff6666" : "#2ecc71";
+                ctx.beginPath();
+                ctx.arc(
+                    zombie.x + zombie.width / 2, 
+                    zombie.y + zombie.height / 4, 
+                    zombie.width / 3, 
+                    0, 
+                    Math.PI * 2
+                );
+                ctx.fill();
+                
+                // Zombie eyes
+                ctx.fillStyle = "#000";
+                ctx.beginPath();
+                ctx.arc(
+                    zombie.x + zombie.width / 3, 
+                    zombie.y + zombie.height / 4, 
+                    3, 
+                    0, 
+                    Math.PI * 2
+                );
+                ctx.arc(
+                    zombie.x + zombie.width * 2/3, 
+                    zombie.y + zombie.height / 4, 
+                    3, 
+                    0, 
+                    Math.PI * 2
+                );
+                ctx.fill();
+                
+                // Zombie mouth
+                ctx.strokeStyle = "#000";
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.arc(
+                    zombie.x + zombie.width / 2, 
+                    zombie.y + zombie.height / 3, 
+                    5, 
+                    0, 
+                    Math.PI
+                );
+                ctx.stroke();
+            }
+        }
+        
+        // Make nearby zombies angry when one is hit
+        function angerNearbyZombies(x, y) {
+            const angerRadius = 150;
+            const angerDuration = 100; // frames
+            
+            for (let i = 0; i < zombies.length; i++) {
+                const zombie = zombies[i];
+                const distance = Math.sqrt(
+                    Math.pow(zombie.x + zombie.width/2 - x, 2) + 
+                    Math.pow(zombie.y + zombie.height/2 - y, 2)
+                );
+                
+                if (distance < angerRadius) {
+                    zombie.isAngry = true;
+                    zombie.angerTimer = angerDuration;
+                    
+                    // Calculate direction to player
+                    const dx = player.x + player.width/2 - (zombie.x + zombie.width/2);
+                    const dy = player.y + player.height/2 - (zombie.y + zombie.height/2);
+                    const angle = Math.atan2(dy, dx);
+                    
+                    // Speed up and move directly toward player
+                    const speedBoost = 2.5;
+                    zombie.speedX = Math.cos(angle) * zombie.baseSpeed * speedBoost;
+                    zombie.speedY = Math.sin(angle) * zombie.baseSpeed * speedBoost;
+                }
+            }
+        }
+        
+        // Explosion functions
+        function createExplosion(x, y, size) {
+            explosions.push({
+                x: x,
+                y: y,
+                size: size,
+                particles: [],
+                life: 30
+            });
+            
+            for (let i = 0; i < 15; i++) {
+                explosions[explosions.length - 1].particles.push({
+                    x: 0,
+                    y: 0,
+                    radius: 2 + Math.random() * 3,
+                    color: ["#f1c40f", "#e74c3c", "#f39c12"][Math.floor(Math.random() * 3)],
+                    speed: 1 + Math.random() * 3,
+                    angle: Math.random() * Math.PI * 2,
+                    life: 30 + Math.random() * 20
+                });
+            }
+        }
+        
+        function updateExplosions() {
+            for (let i = explosions.length - 1; i >= 0; i--) {
+                explosions[i].life--;
+                
+                if (explosions[i].life <= 0) {
+                    explosions.splice(i, 1);
+                }
+            }
+        }
+        
+        function drawExplosions() {
+            for (let i = 0; i < explosions.length; i++) {
+                const explosion = explosions[i];
+                const progress = 1 - (explosion.life / 30);
+                
+                for (let j = 0; j < explosion.particles.length; j++) {
+                    const particle = explosion.particles[j];
+                    
+                    const distance = particle.speed * progress * 30;
+                    const x = explosion.x + Math.cos(particle.angle) * distance;
+                    const y = explosion.y + Math.sin(particle.angle) * distance;
+                    const alpha = 1 - progress;
+                    
+                    ctx.globalAlpha = alpha;
+                    ctx.fillStyle = particle.color;
+                    ctx.beginPath();
+                    ctx.arc(x, y, particle.radius, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.globalAlpha = 1;
+                }
+            }
+        }
+        
+        // Damage effect functions
+        function createDamageEffect(x, y) {
+            damageEffects.push({
+                x: x,
+                y: y,
+                radius: 30,
+                alpha: 1,
+                life: 30
+            });
+        }
+        
+        function updateDamageEffects() {
+            for (let i = damageEffects.length - 1; i >= 0; i--) {
+                damageEffects[i].life--;
+                damageEffects[i].alpha = damageEffects[i].life / 30;
+                damageEffects[i].radius -= 0.5;
+                
+                if (damageEffects[i].life <= 0) {
+                    damageEffects.splice(i, 1);
+                }
+            }
+        }
+        
+        function drawDamageEffects() {
+            for (let i = 0; i < damageEffects.length; i++) {
+                const effect = damageEffects[i];
+                
+                ctx.globalAlpha = effect.alpha;
+                ctx.strokeStyle = "#e74c3c";
+                ctx.lineWidth = 3;
+                ctx.beginPath();
+                ctx.arc(
+                    effect.x, 
+                    effect.y, 
+                    effect.radius, 
+                    0, 
+                    Math.PI * 2
+                );
+                ctx.stroke();
+                ctx.globalAlpha = 1;
+            }
+        }
+        
+        // Collision detection
+        function checkCollisions() {
+            // Bullet-zombie collisions
+            for (let i = bullets.length - 1; i >= 0; i--) {
+                for (let j = zombies.length - 1; j >= 0; j--) {
+                    if (checkCollision(bullets[i], zombies[j])) {
+                        // Remove bullet and zombie
+                        bullets.splice(i, 1);
+                        
+                        const zombieX = zombies[j].x + zombies[j].width / 2;
+                        const zombieY = zombies[j].y + zombies[j].height / 2;
+                        
+                        // Make nearby zombies angry
+                        angerNearbyZombies(zombieX, zombieY);
+                        lastZombieHitTime = performance.now();
+                        zombieSpeedMultiplier = 1.5; // Increase speed temporarily
+                        
+                        zombies.splice(j, 1);
+                        score += 5;
+                        scoreDisplay.textContent = score;
+                        
+                        createExplosion(zombieX, zombieY, 20);
+                        break;
+                    }
+                }
+            }
+            
+            // Player-zombie collisions
+            for (let i = zombies.length - 1; i >= 0; i--) {
+                if (checkCollision(player, zombies[i])) {
+                    hitCount++;
+                    createDamageEffect(
+                        zombies[i].x + zombies[i].width / 2,
+                        zombies[i].y + zombies[i].height / 2
+                    );
+                    
+                    zombies.splice(i, 1);
+                    
+                    if (hitCount >= 3) {
+                        createExplosion(
+                            player.x + player.width / 2,
+                            player.y + player.height / 2,
+                            50
+                        );
+                        gameOver();
+                        return;
+                    }
+                }
+            }
+        }
+        
+        function checkCollision(obj1, obj2) {
+            return obj1.x < obj2.x + obj2.width &&
+                   obj1.x + obj1.width > obj2.x &&
+                   obj1.y < obj2.y + obj2.height &&
+                   obj1.y + obj1.height > obj2.y;
+        }
+        
+        // Game control functions
+        function startGame() {
+            score = 0;
+            distance = 0;
+            hitCount = 0;
+            scoreDisplay.textContent = score;
+            distanceDisplay.textContent = "0.00";
+            
+            player.currentSpeed = player.baseSpeed;
+            player.currentForwardSpeed = player.baseForwardSpeed;
+            
+            bullets.length = 0;
+            zombies.length = 0;
+            explosions.length = 0;
+            damageEffects.length = 0;
+            
+            zombieSpawnCounter = 0;
+            gameTime = 0;
+            speedIncreaseTimer = 0;
+            zombieSpeedMultiplier = 1;
+            lastZombieHitTime = 0;
+            
+            player.x = canvas.width / 2 - player.width / 2;
+            player.y = canvas.height - 100;
+            
+            startScreen.style.display = "none";
+            gameOverScreen.style.display = "none";
+            
+            gameRunning = true;
+            requestAnimationFrame(gameLoop);
+        }
+        
+        function gameOver() {
+            gameRunning = false;
+            
+            finalScoreDisplay.textContent = `Score: ${score}`;
+            finalDistanceDisplay.textContent = `Distance: ${distance.toFixed(2)} km`;
+            gameOverScreen.style.display = "flex";
+        }
+        
+        // Event listeners
+        startBtn.addEventListener('click', startGame);
+        restartBtn.addEventListener('click', startGame);
+        
+        // Touch controls
+        leftBtn.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            player.movingLeft = true;
+        }, {passive: false});
+        
+        leftBtn.addEventListener('touchend', (e) => {
+            e.preventDefault();
+            player.movingLeft = false;
+        }, {passive: false});
+        
+        rightBtn.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            player.movingRight = true;
+        }, {passive: false});
+        
+        rightBtn.addEventListener('touchend', (e) => {
+            e.preventDefault();
+            player.movingRight = false;
+        }, {passive: false});
+        
+        upBtn.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            player.movingUp = true;
+        }, {passive: false});
+        
+        upBtn.addEventListener('touchend', (e) => {
+            e.preventDefault();
+            player.movingUp = false;
+        }, {passive: false});
+        
+        downBtn.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            player.movingDown = true;
+        }, {passive: false});
+        
+        downBtn.addEventListener('touchend', (e) => {
+            e.preventDefault();
+            player.movingDown = false;
+        }, {passive: false});
+        
+        // Mouse controls (PC)
+        leftBtn.addEventListener('mousedown', () => {
+            player.movingLeft = true;
+        });
+        
+        leftBtn.addEventListener('mouseup', () => {
+            player.movingLeft = false;
+        });
+        
+        leftBtn.addEventListener('mouseleave', () => {
+            player.movingLeft = false;
+        });
+        
+        rightBtn.addEventListener('mousedown', () => {
+            player.movingRight = true;
+        });
+        
+        rightBtn.addEventListener('mouseup', () => {
+            player.movingRight = false;
+        });
+        
+        rightBtn.addEventListener('mouseleave', () => {
+            player.movingRight = false;
+        });
+        
+        upBtn.addEventListener('mousedown', () => {
+            player.movingUp = true;
+        });
+        
+        upBtn.addEventListener('mouseup', () => {
+            player.movingUp = false;
+        });
+        
+        upBtn.addEventListener('mouseleave', () => {
+            player.movingUp = false;
+        });
+        
+        downBtn.addEventListener('mousedown', () => {
+            player.movingDown = true;
+        });
+        
+        downBtn.addEventListener('mouseup', () => {
+            player.movingDown = false;
+        });
+        
+        downBtn.addEventListener('mouseleave', () => {
+            player.movingDown = false;
+        });
+        
+        // Keyboard controls
+        document.addEventListener('keydown', (e) => {
+            if (!gameRunning) return;
+            
+            if (e.key === 'ArrowLeft' || e.key === 'a') {
+                player.movingLeft = true;
+            } else if (e.key === 'ArrowRight' || e.key === 'd') {
+                player.movingRight = true;
+            } else if (e.key === 'ArrowUp' || e.key === 'w') {
+                player.movingUp = true;
+            } else if (e.key === 'ArrowDown' || e.key === 's') {
+                player.movingDown = true;
+            }
+        });
+        
+        document.addEventListener('keyup', (e) => {
+            if (e.key === 'ArrowLeft' || e.key === 'a') {
+                player.movingLeft = false;
+            } else if (e.key === 'ArrowRight' || e.key === 'd') {
+                player.movingRight = false;
+            } else if (e.key === 'ArrowUp' || e.key === 'w') {
+                player.movingUp = false;
+            } else if (e.key === 'ArrowDown' || e.key === 's') {
+                player.movingDown = false;
+            }
+        });
+        
+        // Ensure proper start on PC
+        window.addEventListener('load', () => {
+            resizeCanvas();
+            if (window.innerWidth >= 768) {
+                document.body.style.display = 'flex';
+                document.body.style.justifyContent = 'center';
+                document.body.style.alignItems = 'center';
+            }
+        });
+    </script>
+</body>
+</html>
